@@ -5,21 +5,102 @@ output:
     keep_md: true
 ---
 
+```{r setoptions, echo=FALSE}
+knitr::opts_chunk$set(cache = TRUE)
+```
+
+```{r setup, echo=FALSE}
+library(ggplot2)
+library(dplyr)
+library(DT)
+
+```
+
 
 ## Loading and preprocessing the data
 
-
+```{r}
+activity <- read.csv("activity.csv")
+activity <- transform(activity, date = as.Date(activity$date, "%Y-%m-%d"))
+```
 
 ## What is mean total number of steps taken per day?
 
+```{r}
+steps <- activity %>% group_by(date) %>% summarise(Totalsteps = sum(steps), Mean = mean(steps), Median = median(steps))
 
+subset(steps, select = c(date,Totalsteps))
+
+barplot(steps$Totalsteps, space = 0, names.arg = steps$date,
+        xlab = "Date",
+        ylab = "Number of steps",
+        main = "Total number of steps")
+
+```
+
+```{r}
+DT::datatable(subset(steps, select = c(date, Mean, Median)),
+              rownames = FALSE,
+              caption = "Mean and median")
+
+
+```
 
 ## What is the average daily activity pattern?
 
+```{r}
+interval <- activity %>% group_by(interval) %>% summarise(Mean = mean(steps, na.rm = TRUE))
 
+plot(interval, type = "l",
+     xlab = "Interval",
+     ylab = "Number of steps",
+     main = "Average daily activity pattern")
+
+index <- which.max(interval$Mean)
+interval[index,]
+
+```
 
 ## Imputing missing values
+
+```{r}
+tolalNA <- sum(is.na(activity$steps))
+bads <- is.na(activity$steps)
+newdata <- activity[!bads,]
+
+newsteps <- newdata %>% group_by(date) %>% summarise( Totalsteps = sum(steps), Mean = mean(steps), Median = median(steps))
+
+barplot(newsteps$Totalsteps, space = 0, names.arg = newsteps$date,
+        xlab = "Date",
+        ylab = "Number of steps",
+        main = "Total number of steps (imputing missing values)")
+
+DT::datatable(subset(newsteps, select = c(date, Mean, Median)),
+              rownames = FALSE,
+              caption = "Mean and median (imputing missing values)")
+
+```
 
 
 
 ## Are there differences in activity patterns between weekdays and weekends?
+
+```{r}
+
+Sys.setlocale("LC_ALL","English")
+week <- weekdays(newdata$date, abbreviate = TRUE)
+weektype <- factor(week, 
+                   levels = c("Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"),
+                   labels = c(rep("Weekday", 5), rep("Weelend", 2)))
+
+newdataupdated <- newdata %>% mutate(weektype = weektype)
+newstepsupdated <- newdataupdated %>% group_by(weektype, interval) %>% summarise(Mean = mean(steps))
+
+ggplot(newstepsupdated, aes(x = interval, y = Mean)) +
+  geom_line(col = "blue") +
+  facet_wrap(~ weektype, nrow = 2) +
+  labs(x = "Interval", y = "Number of steps", 
+       title = "Activity patterns between weekdays and weekends")
+
+
+```
