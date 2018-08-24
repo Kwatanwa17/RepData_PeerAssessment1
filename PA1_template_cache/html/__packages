@@ -1,5 +1,5 @@
 base
 ggplot2
 dplyr
-DT
+xtable
 bindrcpp

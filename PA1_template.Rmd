@@ -12,7 +12,7 @@ knitr::opts_chunk$set(cache = TRUE)
 ```{r setup, echo=FALSE}
 library(ggplot2)
 library(dplyr)
-library(DT)
+library(xtable)
 
 ```
 
@@ -29,8 +29,20 @@ activity <- transform(activity, date = as.Date(activity$date, "%Y-%m-%d"))
 ```{r}
 steps <- activity %>% group_by(date) %>% summarise(Totalsteps = sum(steps), Mean = mean(steps), Median = median(steps))
 
-subset(steps, select = c(date,Totalsteps))
+```
 
+### Summary of total, mean and median of steps taken by each day
+
+```{r, results='asis'}
+stepsxt <- transform(steps, date = as.character(steps$date))
+xt <- xtable(stepsxt)
+print(xt, type = "html", include.rownames = FALSE)
+```
+
+### Histgram of total number of steps
+
+```{r}
+             
 barplot(steps$Totalsteps, space = 0, names.arg = steps$date,
         xlab = "Date",
         ylab = "Number of steps",
@@ -38,16 +50,10 @@ barplot(steps$Totalsteps, space = 0, names.arg = steps$date,
 
 ```
 
-```{r}
-DT::datatable(subset(steps, select = c(date, Mean, Median)),
-              rownames = FALSE,
-              caption = "Mean and median")
-
-
-```
 
 ## What is the average daily activity pattern?
 
+### Plot of average daily activity pattern 
 ```{r}
 interval <- activity %>% group_by(interval) %>% summarise(Mean = mean(steps, na.rm = TRUE))
 
@@ -55,13 +61,26 @@ plot(interval, type = "l",
      xlab = "Interval",
      ylab = "Number of steps",
      main = "Average daily activity pattern")
+```
 
+### Which 5-minute interval contains the maximum number of steps?
+
+```{r, results='asis'}
 index <- which.max(interval$Mean)
-interval[index,]
+print(xtable(interval[index,]), type = "html")
 
 ```
 
 ## Imputing missing values
+
+### Calculating the total number of missig values
+
+```{r}
+sum(is.na(activity$steps))
+```
+We will apply is.na function to activity data set to remove NA values.
+
+### Create a new data set and make a histgram of the total number of steps (imputing missing values)
 
 ```{r}
 tolalNA <- sum(is.na(activity$steps))
@@ -74,14 +93,17 @@ barplot(newsteps$Totalsteps, space = 0, names.arg = newsteps$date,
         xlab = "Date",
         ylab = "Number of steps",
         main = "Total number of steps (imputing missing values)")
-
-DT::datatable(subset(newsteps, select = c(date, Mean, Median)),
-              rownames = FALSE,
-              caption = "Mean and median (imputing missing values)")
-
 ```
 
+### Mean and median, total number of steps taken per day
 
+```{r, results='asis'}
+
+newstepsxt <- transform(newsteps, date = as.character(steps$date))
+xt2 <- xtable(newstepsxt)
+print(xt2, type = "html", include.rownames = FALSE)
+              
+```
 
 ## Are there differences in activity patterns between weekdays and weekends?
 
